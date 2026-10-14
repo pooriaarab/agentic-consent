@@ -1,22 +1,21 @@
 {
-  "name": "@pooriaarab/agentic-scaffold",
+  "name": "agentic-consent",
   "version": "0.1.0",
-  "description": "Canonical scaffold for a CLI plus library plus MCP server pack.",
+  "description": "Record, check, and revoke consent by contact and channel.",
   "keywords": [
+    "consent",
     "cli",
     "mcp",
-    "scaffold",
-    "starter",
-    "typescript"
+    "agentic-core"
   ],
   "license": "MIT",
   "author": "Pooria Arab",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pooriaarab/agentic-scaffold.git"
+    "url": "https://github.com/pooriaarab/agentic-consent.git"
   },
   "type": "module",
-  "private": true,
+  "private": false,
   "engines": {
     "node": ">=18"
   },
@@ -36,8 +35,8 @@
     }
   },
   "bin": {
-    "agentic-pack": "./dist/cli.js",
-    "agentic-pack-mcp": "./dist/mcp-bin.js"
+    "agentic-consent": "./dist/cli.js",
+    "agentic-consent-mcp": "./dist/mcp-bin.js"
   },
   "scripts": {
     "build": "tsup",
@@ -47,7 +46,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0",
+    "agentic-core": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
