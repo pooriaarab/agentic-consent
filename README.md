@@ -64,11 +64,8 @@ These vendor contact APIs are adjacent alternatives for applications that alread
 |---|---|---|
 | Local ledger | ✓ | Grant, revoke, and check five channel values |
 | Custom HTTP service | ✓ | POST to your `/grant`, `/revoke`, and `/check` endpoints |
-| Mailchimp | scaffold | Member POST writes; checks return `unknown` |
-| Twilio | scaffold | Compliance-path POST writes; checks return `unknown` |
-| Intercom | scaffold | Contact POST writes; checks return `unknown` |
 
-The source defines five channels, one local store, one generic HTTP adapter, and three named vendor scaffolds.
+The source defines five channels, one local store, and one generic HTTP adapter. No vendor adapters ship.
 Tests cover local and mocked HTTP behavior. No named vendor integration is credential-verified for this rewrite.
 
 ## Common use cases
@@ -88,7 +85,7 @@ Tests cover local and mocked HTTP behavior. No named vendor integration is crede
 
 ## Runtime surfaces
 
-The Node.js SDK exports `grantConsent`, `revokeConsent`, `checkConsent`, `LocalConsentStore`, and adapter classes.
+The Node.js SDK exports `grantConsent`, `revokeConsent`, `checkConsent`, `LocalConsentStore`, `HttpConsentAdapter`, and the `ConsentStore` and `VendorConsentAdapter` interfaces.
 
 ```js
 import { LocalConsentStore, grantConsent, checkConsent } from 'agentic-consent';
@@ -114,8 +111,6 @@ The default server uses the local ledger; its tools do not select named vendors.
 - Local writes have no cross-process lock. Concurrent writers can overwrite each other's changes.
 - The package does not send messages, enforce sender suppression, receive webhooks, or process SMS STOP automatically.
 - No built-in expiry rules, jurisdiction rules, or Canadian Anti-Spam Legislation (CASL) compliance engine exists.
-- Named adapters do not enforce channel restrictions. Their checks always return `unknown` without querying a vendor.
-- Named vendor writes use fixed POST payloads. Treat them as scaffolds, not working subscription synchronization.
 - A supplied vendor replaces the local write path; it does not also update the local file.
 - `check --endpoint` calls the HTTP service even without `--live`. The dry-run default applies only to grant and revoke.
 - HTTP adapters have no configured timeout, retry policy, or response-schema validation.
@@ -126,7 +121,6 @@ The default server uses the local ledger; its tools do not select named vendors.
 - Custom HTTP service: implement POST `/grant`, `/revoke`, and `/check`; return a `ConsentRecord` JSON object.
 - Custom HTTP authentication: export `AGENTIC_CONSENT_API_KEY` or pass CLI `--api-key` with `--endpoint`.
 - Environment loading: export keys before launching the CLI. The package does not load `.env` files.
-- Vendor extension work: inspect the named scaffold classes before implementing Mailchimp, Twilio, or Intercom synchronization.
 
 CLI `--endpoint` always uses the generic HTTP contract. A vendor's base URL does not implement that contract automatically.
 
@@ -143,7 +137,7 @@ agentic-consent stores contact preference state in a local JSON ledger. It expos
 
 ### Which integrations are verified?
 
-agentic-consent has local-store tests and mocked HTTP tests. Mailchimp, Twilio, and Intercom remain scaffolds without credential-backed verification here.
+agentic-consent has local-store tests and mocked HTTP tests. No vendor adapter ships, so no credential-backed vendor verification applies.
 
 ### Does agentic-consent provide a managed consent service?
 
@@ -151,11 +145,11 @@ agentic-consent runs in your Node.js process. You own the local file or the cust
 
 ### How is agentic-consent different from Mailchimp?
 
-agentic-consent stores local contact/channel state. Mailchimp maintains audience subscription fields through its own API; the included scaffold does not provide verified synchronization.
+agentic-consent stores local contact/channel state. Mailchimp maintains audience subscription fields through its own API; this package does not integrate with it.
 
 ### How is agentic-consent different from Intercom?
 
-agentic-consent records local preferences without an Intercom account. Its Intercom scaffold writes custom attributes but does not implement remote consent reads.
+agentic-consent records local preferences without an Intercom account. This package does not integrate with the Intercom API.
 
 ### Does it process Twilio STOP messages?
 
