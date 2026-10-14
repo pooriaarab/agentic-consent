@@ -1,12 +1,19 @@
 {
   "name": "agentic-consent",
-  "version": "0.1.0",
-  "description": "Record, check, and revoke consent by contact and channel.",
+  "version": "0.1.1",
+  "description": "Local opt-in consent ledger for email, SMS, phone, chat, and mail with unsubscribe and STOP workflows.",
   "keywords": [
+    "Mailchimp",
+    "Twilio",
+    "Intercom",
+    "opt-in",
     "consent",
+    "CASL",
+    "unsubscribe",
+    "STOP",
     "cli",
     "mcp",
-    "agentic-core"
+    "agent"
   ],
   "license": "MIT",
   "author": "Pooria Arab",
