@@ -39,13 +39,13 @@ npx agentic-consent revoke --contact ada@example.com --channel email --store ./c
 Contact + channel -> grant / revoke -> preview (default)
                                    -> local JSON file (live)
 Contact + channel -> check -> latest record or unknown
-SDK adapter option -> custom HTTP service or vendor scaffold
+SDK adapter option -> custom HTTP service
 ```
 
 ## Why it exists
 
 Applications need a small local record before they send a message. agentic-consent stores that state without requiring a marketing platform.
-Mailchimp and Intercom maintain their own contact records. The included named adapters need further implementation before production vendor use.
+Mailchimp and Intercom maintain their own contact records; this package stores its state locally and does not sync to them.
 
 ## Compare
 
