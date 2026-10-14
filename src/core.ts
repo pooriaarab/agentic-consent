@@ -130,6 +130,106 @@ export class HttpConsentAdapter implements VendorConsentAdapter {
   }
 }
 
+
+export type VendorName = "mailchimp" | "twilio" | "intercom";
+
+interface VendorAdapterOptions {
+  apiKey?: string;
+  fetchFn?: typeof fetch;
+}
+
+abstract class BaseVendorConsentAdapter implements VendorConsentAdapter {
+  abstract readonly name: string;
+  protected readonly apiKey?: string;
+  protected readonly fetchFn: typeof fetch;
+
+  constructor(options: VendorAdapterOptions = {}) {
+    this.apiKey = options.apiKey;
+    this.fetchFn = options.fetchFn ?? fetch;
+  }
+
+  protected async post(url: string, body: unknown, headers: Record<string, string>): Promise<ConsentRecord> {
+    if (!this.apiKey) throw new VendorError(`${this.name} API key is required for --live`);
+    let response: Response;
+    try {
+      response = await this.fetchFn(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      throw new VendorError(`${this.name} request failed: ${String(error)}`);
+    }
+    if (!response.ok) throw new VendorError(`${this.name} returned ${response.status}: ${await response.text()}`, response.status);
+    return { contact: String((body as ConsentRequest).contact), channel: (body as ConsentRequest).channel, status: "granted", updatedAt: new Date().toISOString(), source: this.name };
+  }
+
+  abstract grant(request: ConsentRequest): Promise<ConsentRecord>;
+  abstract revoke(request: ConsentRequest): Promise<ConsentRecord>;
+  async check(request: Pick<ConsentRequest, "contact" | "channel">): Promise<ConsentRecord> {
+    return { ...request, status: "unknown", updatedAt: new Date().toISOString(), source: this.name };
+  }
+}
+
+/** Mailchimp Marketing API adapter for email opt-in and unsubscribe. */
+export class MailchimpConsentAdapter extends BaseVendorConsentAdapter {
+  readonly name = "mailchimp";
+  constructor(private readonly audienceId: string, options: VendorAdapterOptions = {}) {
+    super(options);
+    if (!audienceId.trim()) throw new Error("Mailchimp audience ID is required");
+  }
+  private url(contact: string): string {
+    const dc = this.apiKey?.split("-").at(-1) || "us1";
+    return `https://${dc}.api.mailchimp.com/3.0/lists/${encodeURIComponent(this.audienceId)}/members/${createHash("md5").update(contact.trim().toLowerCase()).digest("hex")}`;
+  }
+  async grant(request: ConsentRequest): Promise<ConsentRecord> {
+    await this.post(this.url(request.contact), { email_address: request.contact, status: "subscribed" }, { authorization: `Bearer ${this.apiKey}` });
+    return preview({ ...request, source: this.name }, "granted");
+  }
+  async revoke(request: ConsentRequest): Promise<ConsentRecord> {
+    await this.post(this.url(request.contact), { status: "unsubscribed" }, { authorization: `Bearer ${this.apiKey}` });
+    return preview({ ...request, source: this.name }, "revoked");
+  }
+}
+
+/** Twilio adapter for SMS STOP-style opt-out records. */
+export class TwilioConsentAdapter extends BaseVendorConsentAdapter {
+  readonly name = "twilio";
+  constructor(private readonly accountSid: string, options: VendorAdapterOptions = {}) {
+    super(options);
+    if (!accountSid.trim()) throw new Error("Twilio account SID is required");
+  }
+  private url(): string { return `https://messaging.twilio.com/v1/Services/${encodeURIComponent(this.accountSid)}/Compliance/Usa2p/Usa2p`; }
+  async grant(request: ConsentRequest): Promise<ConsentRecord> {
+    await this.post(this.url(), { contact: request.contact, opt_in: true }, { authorization: `Bearer ${this.apiKey}` });
+    return preview({ ...request, source: this.name }, "granted");
+  }
+  async revoke(request: ConsentRequest): Promise<ConsentRecord> {
+    await this.post(this.url(), { contact: request.contact, opt_in: false, keyword: "STOP" }, { authorization: `Bearer ${this.apiKey}` });
+    return preview({ ...request, source: this.name }, "revoked");
+  }
+}
+
+/** Intercom adapter for chat consent attributes. */
+export class IntercomConsentAdapter extends BaseVendorConsentAdapter {
+  readonly name = "intercom";
+  private url(contact: string): string { return `https://api.intercom.io/contacts/${encodeURIComponent(contact)}`; }
+  async grant(request: ConsentRequest): Promise<ConsentRecord> {
+    await this.post(this.url(request.contact), { custom_attributes: { consent: "granted" } }, { authorization: `Bearer ${this.apiKey}`, accept: "application/json" });
+    return preview({ ...request, source: this.name }, "granted");
+  }
+  async revoke(request: ConsentRequest): Promise<ConsentRecord> {
+    await this.post(this.url(request.contact), { custom_attributes: { consent: "revoked" } }, { authorization: `Bearer ${this.apiKey}`, accept: "application/json" });
+    return preview({ ...request, source: this.name }, "revoked");
+  }
+}
+
+export function createVendorConsentAdapter(name: VendorName, options: VendorAdapterOptions & { audienceId?: string; accountSid?: string }): VendorConsentAdapter {
+  if (name === "mailchimp") return new MailchimpConsentAdapter(options.audienceId ?? "", options);
+  if (name === "twilio") return new TwilioConsentAdapter(options.accountSid ?? "", options);
+  return new IntercomConsentAdapter(options);
+}
+
 function preview(request: ConsentRequest, status: ConsentStatus): ConsentRecord {
   return { contact: request.contact, channel: request.channel, status, updatedAt: new Date().toISOString(), source: request.source };
 }
