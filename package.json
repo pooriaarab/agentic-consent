@@ -1,6 +1,6 @@
 {
   "name": "agentic-consent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local opt-in consent ledger for email, SMS, phone, chat, and mail with unsubscribe and STOP workflows.",
   "keywords": [
     "Mailchimp",
