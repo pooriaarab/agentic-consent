@@ -1,12 +1,19 @@
 {
   "name": "agentic-consent",
   "version": "0.1.2",
-  "description": "Local consent ledger for Node.js with email and SMS opt-in records, dry runs, CLI, MCP, and Mailchimp, Twilio, Intercom adapter scaffolds.",
+  "description": "Local opt-in consent ledger for email, SMS, phone, chat, and mail with unsubscribe and STOP workflows.",
   "keywords": [
+    "Mailchimp",
+    "Twilio",
+    "Intercom",
+    "opt-in",
     "consent",
+    "CASL",
+    "unsubscribe",
+    "STOP",
     "cli",
     "mcp",
-    "agentic-core"
+    "agent"
   ],
   "license": "MIT",
   "author": "Pooria Arab",
